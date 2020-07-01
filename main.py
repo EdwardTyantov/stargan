@@ -3,6 +3,7 @@ import argparse
 from solver import Solver
 from data_loader import get_loader
 from torch.backends import cudnn
+import torch
 
 
 def str2bool(v):
@@ -21,6 +22,10 @@ def main(config):
         os.makedirs(config.sample_dir)
     if not os.path.exists(config.result_dir):
         os.makedirs(config.result_dir)
+
+    # Fix seed for determinism
+    if config.deterministic is not None:
+        torch.manual_seed(0)
 
     # Data loader.
     celeba_loader = None
@@ -41,7 +46,7 @@ def main(config):
 
     if config.mode == 'train':
         if config.dataset in ['CelebA', 'RaFD']:
-            solver.train()
+            solver.train(config.debug)
         elif config.dataset in ['Both']:
             solver.train_multi()
     elif config.mode == 'test':
@@ -104,6 +109,12 @@ if __name__ == '__main__':
     parser.add_argument('--sample_step', type=int, default=1000)
     parser.add_argument('--model_save_step', type=int, default=10000)
     parser.add_argument('--lr_update_step', type=int, default=1000)
+
+    # Extra arguments, not in the original stargan repo.
+    # --debug reference.out saves a file called "reference.out" with a result tensor
+    # from the last iteration of the model.
+    parser.add_argument('--debug', type=str, default='')
+    parser.add_argument('--deterministic', type=bool, default=False)
 
     config = parser.parse_args()
     print(config)

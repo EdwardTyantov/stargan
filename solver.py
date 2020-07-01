@@ -179,7 +179,7 @@ class Solver(object):
         elif dataset == 'RaFD':
             return F.cross_entropy(logit, target)
 
-    def train(self):
+    def train(self, debug=''):
         """Train StarGAN within a single dataset."""
         # Set data loader.
         if self.dataset == 'CelebA':
@@ -249,6 +249,11 @@ class Solver(object):
             x_fake = self.G(x_real, c_trg)
             out_src, out_cls = self.D(x_fake.detach())
             d_loss_fake = torch.mean(out_src)
+
+            # Save the last value to reference.out
+            if i == self.num_iters - 1 and debug:
+                to_be_saved = d_loss_cls - d_loss_fake
+                torch.save(to_be_saved, debug)
 
             # Compute loss for gradient penalty.
             alpha = torch.rand(x_real.size(0), 1, 1, 1).to(self.device)
