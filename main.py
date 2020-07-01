@@ -42,7 +42,7 @@ def main(config):
     
 
     # Solver for training and testing StarGAN.
-    solver = Solver(celeba_loader, rafd_loader, config)
+    solver = Solver(celeba_loader, rafd_loader, config, should_script=config.should_script)
 
     if config.mode == 'train':
         if config.dataset in ['CelebA', 'RaFD']:
@@ -115,6 +115,7 @@ if __name__ == '__main__':
     # from the last iteration of the model.
     parser.add_argument('--debug', type=str, default='')
     parser.add_argument('--deterministic', type=bool, default=False)
+    parser.add_argument('--should_script', type=bool, default=False)
 
     config = parser.parse_args()
     print(config)

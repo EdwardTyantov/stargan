@@ -13,7 +13,7 @@ import datetime
 class Solver(object):
     """Solver for training and testing StarGAN."""
 
-    def __init__(self, celeba_loader, rafd_loader, config):
+    def __init__(self, celeba_loader, rafd_loader, config, should_script=False):
         """Initialize configurations."""
 
         # Data loader.
@@ -65,18 +65,23 @@ class Solver(object):
         self.lr_update_step = config.lr_update_step
 
         # Build the model and tensorboard.
-        self.build_model()
+        self.build_model(should_script)
         if self.use_tensorboard:
             self.build_tensorboard()
 
-    def build_model(self):
+    def build_model(self, should_script):
         """Create a generator and a discriminator."""
+        if should_script:
+            maybe_script = torch.jit.script
+        else:
+            maybe_script = lambda x: x
+
         if self.dataset in ['CelebA', 'RaFD']:
-            self.G = Generator(self.g_conv_dim, self.c_dim, self.g_repeat_num)
-            self.D = Discriminator(self.image_size, self.d_conv_dim, self.c_dim, self.d_repeat_num) 
+            self.G = maybe_script(Generator(self.g_conv_dim, self.c_dim, self.g_repeat_num))
+            self.D = maybe_script(Discriminator(self.image_size, self.d_conv_dim, self.c_dim, self.d_repeat_num))
         elif self.dataset in ['Both']:
-            self.G = Generator(self.g_conv_dim, self.c_dim+self.c2_dim+2, self.g_repeat_num)   # 2 for mask vector.
-            self.D = Discriminator(self.image_size, self.d_conv_dim, self.c_dim+self.c2_dim, self.d_repeat_num)
+            self.G = maybe_script(Generator(self.g_conv_dim, self.c_dim+self.c2_dim+2, self.g_repeat_num))   # 2 for mask vector.
+            self.D = maybe_script(Discriminator(self.image_size, self.d_conv_dim, self.c_dim+self.c2_dim, self.d_repeat_num))
 
         self.g_optimizer = torch.optim.Adam(self.G.parameters(), self.g_lr, [self.beta1, self.beta2])
         self.d_optimizer = torch.optim.Adam(self.D.parameters(), self.d_lr, [self.beta1, self.beta2])
